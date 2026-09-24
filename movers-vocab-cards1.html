@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movers 單字卡練習</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; background: #f0f4ff; min-height: 100vh; color: #333; }
+  header { background: linear-gradient(135deg,#4a6cf7,#7b5cf0); color: #fff; padding: 18px 12px; text-align: center; }
+  header h1 { font-size: 1.4rem; }
+  header p { font-size: .85rem; opacity: .85; margin-top: 4px; }
+  .tabs { display: flex; justify-content: center; gap: 10px; margin: 16px auto 8px; flex-wrap: wrap; }
+  .tabs button { padding: 10px 24px; border: none; border-radius: 24px; font-size: 1rem; cursor: pointer; background: #dfe6ff; color: #4a6cf7; font-weight: bold; transition: .2s; }
+  .tabs button.active { background: #4a6cf7; color: #fff; }
+  .panel { max-width: 900px; margin: 0 auto; padding: 12px 16px 40px; }
+  /* 左右箭頭 */
+  .arrow { position: fixed; top: 50%; transform: translateY(-50%); z-index: 10;
+    width: 56px; height: 56px; border: none; border-radius: 50%; font-size: 1.6rem; cursor: pointer;
+    background: #4a6cf7; color: #fff; box-shadow: 0 4px 14px rgba(74,108,247,.4); transition: .2s; display: none; }
+  .arrow:hover { background: #7b5cf0; transform: translateY(-50%) scale(1.1); }
+  .arrow.left { left: 12px; }
+  .arrow.right { right: 12px; }
+  /* 單字卡 */
+  .card-wrap { perspective: 1000px; margin: 18px auto; width: 100%; max-width: 420px; height: 260px; cursor: pointer; }
+  .card { position: relative; width: 100%; height: 100%; transition: transform .5s; transform-style: preserve-3d; }
+  .card.flipped { transform: rotateY(180deg); }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 24px rgba(74,108,247,.18); padding: 16px; }
+  .front { background: #fff; }
+  .back { background: #4a6cf7; color: #fff; transform: rotateY(180deg); }
+  .emoji { font-size: 3.4rem; line-height: 1; }
+  .word { font-size: 2rem; font-weight: bold; color: #333; text-align: center; }
+  .pos { font-size: .9rem; color: #999; }
+  .zh { font-size: 1.6rem; font-weight: bold; text-align: center; }
+  .hint { font-size: .8rem; color: #bbb; }
+  .speak-row { display: flex; gap: 12px; }
+  .speak-btn { border: none; background: #eef2ff; border-radius: 50%; width: 52px; height: 52px; font-size: 1.15rem; cursor: pointer; transition: .2s; }
+  .speak-btn:hover { background: #dfe6ff; transform: scale(1.08); }
+  .speak-btn.light { background: rgba(255,255,255,.25); }
+  .speak-btn.sm { width: 38px; height: 38px; font-size: .95rem; }
+  .nav { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 8px; }
+  .nav button { padding: 10px 22px; border: none; border-radius: 12px; background: #4a6cf7; color: #fff; font-size: 1rem; cursor: pointer; }
+  .nav button.ghost { background: #dfe6ff; color: #4a6cf7; }
+  .counter { font-weight: bold; color: #666; }
+  .filter-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
+  .filter-row button { border: 1px solid #ccd6ff; background: #fff; color: #4a6cf7; border-radius: 8px; padding: 4px 9px; font-size: .82rem; cursor: pointer; }
+  .filter-row button.active { background: #4a6cf7; color: #fff; }
+  /* 單字列表 */
+  .list-tools { display: flex; gap: 10px; justify-content: center; margin: 14px 0; flex-wrap: wrap; }
+  .list-tools input { padding: 9px 16px; border: 1px solid #ccd6ff; border-radius: 20px; font-size: 1rem; width: min(320px,80vw); outline: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; }
+  .item { background: #fff; border-radius: 14px; padding: 12px 10px; text-align: center; box-shadow: 0 3px 10px rgba(74,108,247,.10); }
+  .item .em { font-size: 1.9rem; }
+  .item .wd { font-weight: bold; margin-top: 4px; word-break: break-word; }
+  .item .ps { font-size: .75rem; color: #999; }
+  .item .zw { font-size: .9rem; color: #555; margin-top: 2px; }
+  .item button { margin-top: 6px; }
+  /* 測驗 */
+  .quiz-box { background: #fff; border-radius: 20px; padding: 28px 20px; box-shadow: 0 8px 24px rgba(74,108,247,.15); text-align: center; margin-top: 18px; max-width: 640px; margin-left: auto; margin-right: auto; }
+  .quiz-zh { font-size: 1.5rem; font-weight: bold; margin-bottom: 4px; }
+  .quiz-pos { color: #999; font-size: .9rem; margin-bottom: 18px; }
+  .blanks { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 18px; }
+  .ch { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 44px; font-size: 1.4rem; font-weight: bold; }
+  .ch.shown { color: #4a6cf7; border-bottom: 3px solid #ccd6ff; }
+  .ch input { width: 34px; height: 44px; text-align: center; font-size: 1.4rem; font-weight: bold; border: none; border-bottom: 3px solid #4a6cf7; background: #f6f8ff; outline: none; text-transform: lowercase; }
+  .ch input.ok { color: #1a9c4b; border-bottom-color: #1a9c4b; background: #e9f9ef; }
+  .ch input.bad { color: #d33; border-bottom-color: #d33; background: #fdecec; }
+  .ch.space { width: 16px; }
+  .ch.punct { color: #aaa; }
+  .setup-label { font-weight: bold; margin: 14px 0 8px; color: #555; }
+  .setup-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .setup-row button { padding: 8px 18px; border: 1px solid #ccd6ff; background: #fff; color: #4a6cf7; border-radius: 18px; font-size: .95rem; cursor: pointer; }
+  .setup-row button.active { background: #4a6cf7; color: #fff; }
+  .quiz-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .quiz-actions button { padding: 10px 20px; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer; background: #4a6cf7; color: #fff; }
+  .quiz-actions button.ghost { background: #dfe6ff; color: #4a6cf7; }
+  .quiz-actions button.warn { background: #f7a54a; }
+  .feedback { margin-top: 14px; font-size: 1.15rem; font-weight: bold; min-height: 1.6em; }
+  .feedback.good { color: #1a9c4b; }
+  .feedback.bad { color: #d33; }
+  .score { margin-top: 6px; color: #666; }
+  @media (max-width: 480px) { .word { font-size: 1.6rem; } .emoji { font-size: 2.6rem; } .ch, .ch input { width: 28px; height: 38px; font-size: 1.15rem; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 Movers 單字卡練習</h1>
+  <p>Cambridge YLE Movers A–Z Word List ｜ 點卡片翻面 ｜ 🔊 聽發音</p>
+</header>
+<div class="tabs">
+  <button id="tabCard" class="active" onclick="switchMode('card')">🃏 單字卡</button>
+  <button id="tabList" onclick="switchMode('list')">📋 單字列表</button>
+  <button id="tabQuiz" onclick="switchMode('quiz')">✏️ 填空測驗</button>
+</div>
+
+<!-- 左右翻卡箭頭 -->
+<button class="arrow left" id="arrowL" title="上一張" onclick="prevCard()">⬅</button>
+<button class="arrow right" id="arrowR" title="下一張" onclick="nextCard()">➡</button>
+
+<!-- 單字卡模式 -->
+<div class="panel" id="cardPanel">
+  <div class="nav" style="margin-bottom:4px">
+    <button class="ghost" onclick="shuffleCards()">🔀 洗牌</button>
+    <span class="counter" id="cardCounter"></span>
+  </div>
+  <div class="card-wrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="emoji" id="cardEmoji"></div>
+        <div class="word" id="cardWord"></div>
+        <div class="pos" id="cardPos"></div>
+        <div class="speak-row">
+          <button class="speak-btn" title="英文發音" onclick="event.stopPropagation();speakEn()">🔊 EN</button>
+          <button class="speak-btn" title="中文發音" onclick="event.stopPropagation();speakZh()">🔊 中</button>
+        </div>
+        <div class="hint">點卡片看中文意思</div>
+      </div>
+      <div class="face back">
+        <div class="emoji" id="cardEmojiBack"></div>
+        <div class="zh" id="cardZh"></div>
+        <button class="speak-btn light" onclick="event.stopPropagation();speakZh()">🔊 中文發音</button>
+        <div class="hint" style="color:rgba(255,255,255,.7)">再點一次回英文</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="ghost" onclick="prevCard()">⬅ 上一個</button>
+    <button onclick="speakEn()">🔊 發音</button>
+    <button class="ghost" onclick="nextCard()">下一個 ➡</button>
+  </div>
+  <div class="filter-row" id="letterFilter"></div>
+</div>
+
+<!-- 單字列表模式 -->
+<div class="panel" id="listPanel" style="display:none">
+  <div class="list-tools">
+    <input id="searchBox" placeholder="🔍 搜尋英文或中文…" oninput="renderList()">
+  </div>
+  <div class="filter-row" id="listLetterFilter"></div>
+  <div class="grid" id="wordGrid"></div>
+</div>
+
+<!-- 測驗模式 -->
+<div class="panel" id="quizPanel" style="display:none">
+  <!-- 測驗設定 -->
+  <div class="quiz-box" id="quizSetup">
+    <div style="font-size:1.2rem;font-weight:bold;margin-bottom:14px">⚙️ 測驗設定</div>
+    <div class="setup-label">測驗題數</div>
+    <div class="setup-row" id="countRow">
+      <button data-c="10" class="active">10 題</button>
+      <button data-c="20">20 題</button>
+      <button data-c="30">30 題</button>
+      <button data-c="all">全部</button>
+    </div>
+    <div class="setup-label">字母種類</div>
+    <div class="setup-row" id="quizLetterRow"></div>
+    <div style="margin-top:18px">
+      <button style="padding:12px 40px;font-size:1.1rem" onclick="startQuiz()">🚀 開始測驗</button>
+    </div>
+    <div class="score" id="setupInfo" style="margin-top:12px"></div>
+  </div>
+
+  <!-- 測驗進行中 -->
+  <div class="quiz-box" id="quizMain" style="display:none">
+    <div class="quiz-zh" id="quizZh"></div>
+    <div class="quiz-pos" id="quizPos"></div>
+    <div class="blanks" id="quizBlanks"></div>
+    <div class="quiz-actions">
+      <button onclick="checkQuiz()">✅ 檢查答案</button>
+      <button class="warn" onclick="revealQuiz()">👀 顯示答案</button>
+      <button class="ghost" onclick="quizHint()">🔊 發音提示</button>
+      <button class="ghost" onclick="nextQuiz()">下一題 ➡</button>
+    </div>
+    <div class="feedback" id="quizFeedback"></div>
+    <div class="score" id="quizScore"></div>
+    <div style="margin-top:10px"><button class="ghost" onclick="backToSetup()" style="padding:8px 16px;font-size:.9rem;border:none;border-radius:10px;background:#dfe6ff;color:#4a6cf7;cursor:pointer">⚙️ 重新設定</button></div>
+  </div>
+
+  <!-- 測驗結果 -->
+  <div class="quiz-box" id="quizResult" style="display:none">
+    <div style="font-size:3rem">🏁</div>
+    <div style="font-size:1.4rem;font-weight:bold;margin:10px 0" id="resultText"></div>
+    <div class="quiz-actions">
+      <button onclick="startQuiz()">🔁 再測一次</button>
+      <button class="ghost" onclick="backToSetup()">⚙️ 重新設定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// [英文, 詞性, 中文, Emoji]
+const WORDS = [
+["above","prep","在…之上","⬆️"],["address","n","地址","📮"],["afraid","adj","害怕的","😨"],["after","prep","在…之後","⏭️"],["age","n","年齡","🎂"],["all","adj/adv/det/pron","全部；都","💯"],["all right","adj/adv","好的；沒問題","👌"],["along","prep","沿著","🛣️"],["always","adv","總是","♾️"],["another","det/pron","另一個","➕"],["any","det/pron","任何的","🤷"],["app","n","應用程式","📱"],["around","prep","圍繞；大約","🔄"],["asleep","adj","睡著的","😴"],["at","prep","在（某時間）","🕐"],["aunt","n","阿姨；姑姑","👩"],["awake","adj","醒著的","👀"],
+["back","adj/adv/n","背部；回來","🔙"],["bad","adj","壞的","👎"],["badly","adv","差勁地；嚴重地","😖"],["balcony","n","陽台","🌇"],["band","n","樂團","🎸"],["basement","n","地下室","🕳️"],["bat","n","蝙蝠；球棒","🦇"],["be called","v","被叫做","🏷️"],["beard","n","鬍子","🧔"],["because","conj","因為","💡"],["before","prep","在…之前","⏮️"],["below","prep","在…之下","⬇️"],["best","adj/adv","最好的","🥇"],["better","adj/adv","較好的","👍"],["blanket","n","毯子","🛌"],["blonde","adj","金髮的","👱"],["boring","adj","無聊的","🥱"],["both","det/pron","兩者都","✌️"],["bottle","n","瓶子","🍾"],["bottom","adj/n","底部；底部的","🔻"],["bowl","n","碗","🥣"],["brave","adj","勇敢的","🦸"],["break","n","休息","☕"],["brilliant","adj/excl","極好的","✨"],["bring","v","帶來","🫴"],["build","v","建造","🔨"],["building","n","建築物","🏢"],["bus station","n","公車總站","🚏"],["bus stop","n","公車站牌","🚏"],["busy","adj","忙碌的","🐝"],["buy","v","買","🛒"],["by","prep","藉由；在旁邊","📍"],
+["café","n","咖啡館","☕"],["cage","n","籠子","🐦"],["call","v","呼叫；打電話","📞"],["car park","n","停車場","🅿️"],["careful","adj","小心的","⚠️"],["carefully","adv","小心地","🧐"],["carry","v","攜帶","🎒"],["catch","v","趕上（車）；接住","🤾"],["CD","n","光碟","💿"],["centre","n","中心","🎯"],["change","v","改變","🔀"],["Charlie","n","查理（人名）","👦"],["cheese","n","起司","🧀"],["cinema","n","電影院","🎬"],["circle","n","圓圈","⭕"],["circus","n","馬戲團","🎪"],["city","n","城市","🏙️"],["city centre","n","市中心","🌆"],["Clare","n","克萊兒（人名）","👧"],["clever","adj","聰明的","🧠"],["climb","v","攀爬","🧗"],["cloud","n","雲","☁️"],["cloudy","adj","多雲的","🌥️"],["clown","n","小丑","🤡"],["coat","n","外套","🧥"],["coffee","n","咖啡","☕"],["cold","adj/n","冷的；感冒","🥶"],["come on","excl","快點！加油！","🏃"],["comic","n","漫畫","📖"],["comic book","n","漫畫書","📚"],["cook","n/v","廚師；煮飯","👨‍🍳"],["cough","n","咳嗽","🤧"],["could","v","能夠（can的過去式）","💭"],["country","n","國家；鄉村","🗺️"],["countryside","n","鄉下","🌾"],["cry","v","哭","😢"],["cup","n","杯子","🥤"],["curly","adj","捲曲的","🌀"],
+["Daisy","n","黛西（人名）","👧"],["dance","n/v","跳舞","💃"],["dangerous","adj","危險的","☠️"],["daughter","n","女兒","👧"],["dentist","n","牙醫","🦷"],["difference","n","差異","↔️"],["different","adj","不同的","🔀"],["difficult","adj","困難的","😓"],["doctor","n","醫生","👨‍⚕️"],["dolphin","n","海豚","🐬"],["down","adv/prep","向下","⬇️"],["downstairs","adv/n","在樓下","🪜"],["dream","n/v","夢；做夢","💭"],["dress up","v","裝扮","👗"],["drive","n/v","駕駛；車程","🚗"],["driver","n","司機","🧑‍✈️"],["drop","v","掉落","💧"],["dry","adj/v","乾的；弄乾","☀️"],["DVD","n","數位光碟","📀"],
+["earache","n","耳朵痛","👂"],["easy","adj","容易的","😌"],["e-book","n","電子書","📱"],["elevator","n","電梯（美式）","🛗"],["email","n/v","電子郵件","📧"],["every","det","每一個","🔁"],["everyone","pron","每個人","👨‍👩‍👧‍👦"],["everything","pron","每件事","🌐"],["exciting","adj","令人興奮的","🤩"],["excuse me","dis","不好意思；借過","🙋"],
+["fair","adj","公平的；白皙的","⚖️"],["fall","v","掉落；跌倒","🍂"],["famous","adj","著名的","🌟"],["farm","n","農場","🚜"],["farmer","n","農夫","👨‍🌾"],["fat","adj","胖的","🍔"],["feed","v","餵食","🍼"],["field","n","田野","🌿"],["film","n/v","電影（英式）","🎞️"],["film star","n","電影明星","🌟"],["fine","adj/excl","好的；晴朗的","👌"],["first","adj/adv","第一；首先","🥇"],["fish","v","釣魚","🎣"],["fix","v","修理","🔧"],["floor","n","地板；樓層","🏠"],["fly","n","蒼蠅","🪰"],["forest","n","森林","🌲"],["Fred","n","弗萊德（人名）","👦"],["Friday","n","星期五","📅"],["frightened","adj","受驚嚇的","😱"],["funfair","n","遊樂園","🎡"],
+["get dressed","v","穿衣服","👕"],["get off","v","下車","🚶"],["get on","v","上車","🚌"],["get undressed","v","脫衣服","🛁"],["get up","v","起床","⏰"],["glass","n","玻璃杯；玻璃","🥛"],["go shopping","v","去購物","🛍️"],["goal","n","進球；目標","⚽"],["granddaughter","n","孫女","👧"],["grandparent","n","祖父母","👴"],["grandson","n","孫子","👦"],["grass","n","草","🌱"],["ground","n","地面","🟫"],["grow","v","成長；種植","📈"],["grown-up","n","大人","🧑"],
+["have to","v","必須","❗"],["headache","n","頭痛","🤕"],["helmet","n","安全帽","⛑️"],["help","v","幫忙","🆘"],["hide","v","躲藏","🫣"],["holiday","n","假期","🏖️"],["homework","n","家庭作業","📓"],["hop","v","單腳跳","🐇"],["hospital","n","醫院","🏥"],["hot","adj","熱的","🥵"],["how","adv","如何","❓"],["how much","adv/int","多少（錢）","💰"],["how often","adv/int","多久一次","⏱️"],["huge","adj","巨大的","🐘"],["hundred","n","一百","💯"],["hungry","adj","餓的","🍽️"],["hurt","v","受傷；疼痛","🩹"],
+["ice","n","冰","🧊"],["ice skates","n","溜冰鞋","⛸️"],["ice skating","n","溜冰","⛸️"],["idea","n","主意","💡"],["ill","adj","生病的","🤒"],["inside","adv/n/prep","在裡面","📥"],["internet","n","網路","🌐"],["into","prep","進入","➡️"],["invite","v","邀請","💌"],["island","n","島嶼","🏝️"],
+["Jack","n","傑克（人名）","👦"],["Jane","n","珍（人名）","👧"],["Jim","n","吉姆（人名）","👦"],["Julia","n","茱莉亞（人名）","👧"],["jungle","n","叢林","🌴"],
+["kangaroo","n","袋鼠","🦘"],["kick","n","踢","🦵"],["kind","n","種類；親切的","💖"],["kitten","n","小貓","🐱"],
+["lake","n","湖","🏞️"],["laptop","n","筆記型電腦","💻"],["last","adj/adv","最後的；上次","🔚"],["laugh","n/v","笑","😂"],["leaf","n","葉子","🍃"],["library","n","圖書館","📚"],["lift","n","電梯（英式）","🛗"],["Lily","n","莉莉（人名）","👧"],["lion","n","獅子","🦁"],["little","adj","小的；少的","🤏"],["look for","v","尋找","🔍"],["lose","v","遺失；輸掉","😢"],["loud","adj","大聲的","📢"],["loudly","adv","大聲地","🔊"],
+["machine","n","機器","⚙️"],["map","n","地圖","🗺️"],["market","n","市場","🏪"],["Mary","n","瑪麗（人名）","👧"],["matter","n","事情；問題","❓"],["mean","v","意思是","💭"],["message","n","訊息","💬"],["milkshake","n","奶昔","🥛"],["mistake","n","錯誤","❌"],["model","n","模型","🧩"],["Monday","n","星期一","📅"],["moon","n","月亮","🌙"],["more","adv/det/pron","更多","➕"],["most","adv/det/pron","最多；大多數","🏆"],["mountain","n","山","⛰️"],["moustache","n","鬍鬚","👨"],["move","v","移動；搬家","🚚"],["movie","n","電影（美式）","🎬"],["must","v","必須","‼️"],
+["naughty","adj","調皮的","😈"],["near","adv/prep","靠近","📍"],["neck","n","脖子","🦒"],["need","v","需要","🙏"],["net","n","網子","🥅"],["never","adv","從不","🚫"],["noise","n","噪音","🔊"],["noodles","n","麵條","🍜"],["nothing","pron","沒有東西","0️⃣"],["nurse","n","護士","👩‍⚕️"],
+["o'clock","adv","…點鐘","🕐"],["off","adv/prep","離開；關掉","🔌"],["often","adv","經常","🔁"],["on","adv/prep","在…上；開著","💡"],["only","adv","只有","☝️"],["opposite","prep","在…對面","↔️"],["out","adv","出去","🚪"],["out of","prep","從…出來","📤"],["outside","adv/n/prep","在外面","🌳"],
+["pair","n","一雙；一對","🧦"],["pancake","n","鬆餅","🥞"],["panda","n","熊貓","🐼"],["parent","n","父母親","👨‍👧"],["parrot","n","鸚鵡","🦜"],["party","n","派對","🎉"],["pasta","n","義大利麵","🍝"],["Paul","n","保羅（人名）","👦"],["penguin","n","企鵝","🐧"],["Peter","n","彼得（人名）","👦"],["picnic","n","野餐","🧺"],["pirate","n","海盜","🏴‍☠️"],["place","n","地方","📍"],["plant","n/v","植物；種植","🌿"],["plate","n","盤子","🍽️"],["player","n","選手","🎮"],["pool","n","游泳池","🏊"],["pop star","n","流行歌星","🎤"],["practice","n","練習（名詞）","📝"],["practise","v","練習（動詞）","🏋️"],["present","n","禮物","🎁"],["pretty","adj","漂亮的","🌸"],["puppy","n","小狗","🐶"],["put on","v","穿上","🧥"],
+["quick","adj","快的","⚡"],["quickly","adv","快地","💨"],["quiet","adj","安靜的","🤫"],["quietly","adv","安靜地","🤫"],
+["rabbit","n","兔子","🐰"],["rain","n/v","雨；下雨","🌧️"],["rainbow","n","彩虹","🌈"],["ride","n/v","騎","🚴"],["river","n","河流","🏞️"],["road","n","道路","🛣️"],["rock","n","岩石","🪨"],["roller skates","n","直排輪鞋","🛼"],["roller skating","n","溜直排輪","🛼"],["roof","n","屋頂","🏠"],["round","adj/adv/prep","圓的；環繞","⭕"],
+["safe","adj","安全的","🔒"],["sail","n/v","航行；帆","⛵"],["salad","n","沙拉","🥗"],["Sally","n","莎莉（人名）","👧"],["sandwich","n","三明治","🥪"],["Saturday","n","星期六","📅"],["sauce","n","醬汁","🥫"],["scarf","n","圍巾","🧣"],["score","v","得分","🏆"],["seat","n","座位","💺"],["second","adj/adv","第二；秒","2️⃣"],["send","v","寄送","📤"],["shall","v","將要","🤔"],["shape","n","形狀","🔷"],["shark","n","鯊魚","🦈"],["shop","v","購物","🛍️"],["shopping","n","購物","🛒"],["shopping centre","n","購物中心","🏬"],["shoulder","n","肩膀","🧍"],["shout","v","大喊","📣"],["shower","n","淋浴","🚿"],["sick","adj","生病的","🤒"],["skate","n/v","溜冰","⛸️"],["skip","v","跳繩；跳過","🤸"],["sky","n","天空","🌤️"],["slow","adj","慢的","🐢"],["slowly","adv","慢慢地","🐌"],["snail","n","蝸牛","🐌"],["snow","n/v","雪；下雪","❄️"],["someone","pron","某人","🧍"],["something","pron","某事；某物","📦"],["sometimes","adv","有時","⏳"],["son","n","兒子","👦"],["soup","n","湯","🍲"],["sports centre","n","運動中心","🏟️"],["square","adj/n","正方形；廣場","◻️"],["stairs","n","樓梯","🪜"],["star","n","星星","⭐"],["station","n","車站","🚉"],["stomach","n","胃；肚子","😣"],["stomach-ache","n","胃痛；肚子痛","🤢"],["straight","adj","直的；筆直地","📏"],["strong","adj","強壯的","💪"],["Sunday","n","星期日","📅"],["sunny","adj","晴朗的","☀️"],["supermarket","n","超市","🛒"],["surprised","adj","驚訝的","😲"],["sweater","n","毛衣","🧶"],["sweet","adj","甜的","🍬"],["swim","n/v","游泳","🏊"],["swimming pool","n","游泳池","🏊"],["swimsuit","n","泳裝","🩱"],
+["take","v","拿；帶","✋"],["take off","v","脫掉；起飛","🛫"],["tall","adj","高的","🦒"],["tea","n","茶","🍵"],["teach","v","教","👨‍🏫"],["temperature","n","溫度；體溫","🌡️"],["terrible","adj","糟糕的","😫"],["text","n/v","簡訊；傳簡訊","📱"],["than","conj/prep","比","⚖️"],["then","adv","然後","➡️"],["thin","adj","瘦的；薄的","📄"],["think","v","想；認為","🤔"],["third","adj/adv","第三","3️⃣"],["thirsty","adj","口渴的","🥤"],["Thursday","n","星期四","📅"],["ticket","n","票","🎫"],["tired","adj","疲倦的","😪"],["tooth","n","牙齒","🦷"],["toothache","n","牙痛","🦷"],["toothbrush","n","牙刷","🪥"],["toothpaste","n","牙膏","🧴"],["top","adj/n","頂端；最高的","🔝"],["towel","n","毛巾","🧖"],["town","n","城鎮","🏘️"],["town centre","n","市中心","🌆"],["tractor","n","拖拉機","🚜"],["travel","v","旅行","✈️"],["treasure","n","寶藏","💎"],["trip","n","旅行","🧳"],["Tuesday","n","星期二","📅"],
+["uncle","n","叔叔；舅舅","👨"],["up","adv/prep","向上","⬆️"],["upstairs","adv/n","在樓上","🪜"],
+["vegetable","n","蔬菜","🥦"],["Vicky","n","薇琪（人名）","👧"],["video","n/v","影片；錄影","📹"],["village","n","村莊","🏡"],
+["wait","v","等待","⏳"],["wake up","v","醒來","⏰"],["walk","n","走路；散步","🚶"],["wash","n/v","洗","🧼"],["water","v","澆水","💧"],["waterfall","n","瀑布","🌊"],["wave","n","波浪；揮手","👋"],["weak","adj","虛弱的","🥀"],["weather","n","天氣","🌦️"],["website","n","網站","💻"],["Wednesday","n","星期三","📅"],["week","n","星期；週","🗓️"],["weekend","n","週末","🎉"],["well","adj/adv","健康的；好","🙂"],["wet","adj","濕的","💦"],["whale","n","鯨魚","🐋"],["when","adv/conj","何時；當…時","⏰"],["where","pron","哪裡","📍"],["which","pron","哪一個","👉"],["who","pron","誰","🙋"],["why","int","為什麼","🤔"],["wind","n","風","💨"],["windy","adj","有風的","🌬️"],["work","n/v","工作","💼"],["world","n","世界","🌍"],["worse","adj/adv","更糟的","📉"],["worst","adj/adv","最糟的","👎"],["would","v","將會；願意","🤔"],["wrong","adj","錯誤的","❌"],
+["yesterday","adv/n","昨天","⏪"],
+["Zoe","n","柔依（人名）","👧"]
+];
+
+// ===== 音效（Web Audio 合成，不需外部檔案） =====
+let audioCtx = null;
+function tone(freq, t0, dur, vol=0.22){
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type='sine'; o.frequency.value=freq;
+  g.gain.setValueAtTime(0.0001, audioCtx.currentTime+t0);
+  g.gain.exponentialRampToValueAtTime(vol, audioCtx.currentTime+t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+t0+dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(audioCtx.currentTime+t0); o.stop(audioCtx.currentTime+t0+dur+0.05);
+}
+function playSound(kind){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    if(kind==='good'){ tone(523.25,0,0.14); tone(659.25,0.12,0.14); tone(783.99,0.24,0.22); }  // 答對：Do-Mi-Sol 上行
+    else { tone(220,0,0.18,0.18); tone(174.61,0.16,0.26,0.18); }                          // 答錯：低音下行
+  }catch(e){}
+}
+
+// ===== 發音 =====
+function speak(text, lang){
+  if(!('speechSynthesis' in window)){ alert('此瀏覽器不支援語音功能'); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang; u.rate = 0.85;
+  const vs = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith(lang.split('-')[0]));
+  if(vs.length) u.voice = vs[0];
+  speechSynthesis.speak(u);
+}
+if('speechSynthesis' in window) speechSynthesis.getVoices();
+
+// ===== 單字卡 =====
+let deck = WORDS.map((w,i)=>i), ci = 0, flipped = false;
+function renderCard(){
+  const [w,pos,zh,em] = WORDS[deck[ci]];
+  document.getElementById('cardEmoji').textContent = em;
+  document.getElementById('cardEmojiBack').textContent = em;
+  document.getElementById('cardWord').textContent = w;
+  document.getElementById('cardPos').textContent = pos;
+  document.getElementById('cardZh').textContent = zh;
+  document.getElementById('cardCounter').textContent = (ci+1)+' / '+deck.length;
+  flipped = false;
+  document.getElementById('card').classList.remove('flipped');
+}
+function flipCard(){ flipped=!flipped; document.getElementById('card').classList.toggle('flipped',flipped); }
+function nextCard(){ ci=(ci+1)%deck.length; renderCard(); }
+function prevCard(){ ci=(ci-1+deck.length)%deck.length; renderCard(); }
+function shuffleCards(){ for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];} ci=0; renderCard(); }
+function speakEn(){ speak(WORDS[deck[ci]][0], 'en-US'); }
+function speakZh(){ speak(WORDS[deck[ci]][2], 'zh-TW'); }
+(function(){
+  const row = document.getElementById('letterFilter');
+  const letters = ['全部',...new Set(WORDS.map(w=>w[0][0].toUpperCase()))];
+  letters.forEach(L=>{
+    const b=document.createElement('button'); b.textContent=L;
+    b.onclick=()=>{ row.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+      deck = L==='全部' ? WORDS.map((w,i)=>i) : WORDS.map((w,i)=>i).filter(i=>WORDS[i][0][0].toUpperCase()===L);
+      ci=0; renderCard(); };
+    if(L==='全部') b.classList.add('active');
+    row.appendChild(b);
+  });
+})();
+
+// ===== 單字列表 =====
+let listLetter = '全部';
+(function(){
+  const row = document.getElementById('listLetterFilter');
+  const letters = ['全部',...new Set(WORDS.map(w=>w[0][0].toUpperCase()))];
+  letters.forEach(L=>{
+    const b=document.createElement('button'); b.textContent=L;
+    b.dataset.l=L;
+    b.onclick=()=>{ listLetter=L; row.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderList(); };
+    if(L==='全部') b.classList.add('active');
+    row.appendChild(b);
+  });
+})();
+function renderList(){
+  const q = (document.getElementById('searchBox').value||'').trim().toLowerCase();
+  const grid = document.getElementById('wordGrid'); grid.innerHTML='';
+  WORDS.forEach(([w,pos,zh,em],i)=>{
+    if(listLetter!=='全部' && w[0].toUpperCase()!==listLetter) return;
+    if(q && !w.toLowerCase().includes(q) && !zh.includes(q)) return;
+    const d=document.createElement('div'); d.className='item';
+    d.innerHTML = '<div class="em">'+em+'</div><div class="wd">'+w+'</div><div class="ps">'+pos+'</div><div class="zw">'+zh+'</div>';
+    const row=document.createElement('div');
+    const b1=document.createElement('button'); b1.className='speak-btn sm'; b1.textContent='🔊EN'; b1.title='英文發音';
+    b1.onclick=()=>speak(w,'en-US');
+    const b2=document.createElement('button'); b2.className='speak-btn sm'; b2.textContent='🔊中'; b2.title='中文發音';
+    b2.onclick=()=>speak(zh,'zh-TW');
+    row.appendChild(b1); row.appendChild(b2);
+    d.appendChild(row);
+    grid.appendChild(d);
+  });
+  if(!grid.children.length) grid.innerHTML='<p style="grid-column:1/-1;text-align:center;color:#999;padding:30px">找不到符合的單字</p>';
+}
+
+// ===== 填空測驗（不顯示英文單字，挖空部分字母） =====
+let quizOrder = [], qi = 0, qScore = 0, qTotal = 0;
+let quizCount = 10, quizLetter = '隨機';
+
+// 題數選擇
+document.getElementById('countRow').querySelectorAll('button').forEach(b=>{
+  b.onclick=()=>{ document.getElementById('countRow').querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    quizCount = b.dataset.c==='all' ? 'all' : parseInt(b.dataset.c); updateSetupInfo(); };
+});
+// 字母選擇
+(function(){
+  const row = document.getElementById('quizLetterRow');
+  const letters = ['隨機',...new Set(WORDS.map(w=>w[0][0].toUpperCase()))];
+  letters.forEach(L=>{
+    const b=document.createElement('button'); b.textContent=L;
+    b.onclick=()=>{ row.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); quizLetter=L; updateSetupInfo(); };
+    if(L==='隨機') b.classList.add('active');
+    row.appendChild(b);
+  });
+})();
+function poolSize(){ return quizLetter==='隨機' ? WORDS.length : WORDS.filter(w=>w[0][0].toUpperCase()===quizLetter).length; }
+function updateSetupInfo(){
+  const n = quizCount==='all' ? poolSize() : Math.min(quizCount, poolSize());
+  document.getElementById('setupInfo').textContent = '範圍：' + (quizLetter==='隨機'?'全部字母':quizLetter+' 開頭') + '（共 '+poolSize()+' 個單字）｜將出 '+n+' 題';
+}
+function startQuiz(){
+  let pool = WORDS.map((w,i)=>i);
+  if(quizLetter!=='隨機') pool = pool.filter(i=>WORDS[i][0][0].toUpperCase()===quizLetter);
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  const n = quizCount==='all' ? pool.length : Math.min(quizCount, pool.length);
+  quizOrder = pool.slice(0,n); qi=0; qScore=0; qTotal=0;
+  document.getElementById('quizSetup').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizMain').style.display='block';
+  buildQuiz();
+}
+function backToSetup(){
+  document.getElementById('quizSetup').style.display='block';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizMain').style.display='none';
+  updateSetupInfo();
+}
+function buildQuiz(){
+  const idx = quizOrder[qi], [w,pos,zh] = WORDS[idx];
+  document.getElementById('quizZh').textContent = zh;
+  document.getElementById('quizPos').textContent = pos + '　（共 ' + w.replace(/[^a-zA-Zé]/g,'').length + ' 個字母）';
+  const fb0=document.getElementById('quizFeedback'); fb0.textContent=''; fb0.className='feedback';
+  const box = document.getElementById('quizBlanks'); box.innerHTML='';
+  const chars = [...w];
+  const alpha = chars.map(c=>/[a-zA-Zé]/.test(c));
+  const blank = chars.map((c,i)=>{
+    if(!alpha[i]) return false;
+    const prevAlpha = i>0 && alpha[i-1];
+    if(!prevAlpha) return false;
+    return Math.random() < 0.65;
+  });
+  if(!blank.some(b=>b)){ const cand = chars.map((c,i)=>alpha[i]&&(i>0&&alpha[i-1])?i:-1).filter(i=>i>=0); if(cand.length) blank[cand[0]]=true; }
+  chars.forEach((c,i)=>{
+    const span=document.createElement('span');
+    if(alpha[i]){
+      if(blank[i]){
+        span.className='ch';
+        const inp=document.createElement('input');
+        inp.maxLength=1; inp.dataset.ans=c.toLowerCase(); inp.autocomplete='off';
+        inp.oninput=()=>{ const nx=nextInput(inp); if(inp.value&&nx) nx.focus(); };
+        inp.onkeydown=e=>{ if(e.key==='Backspace'&&!inp.value){const pv=prevInput(inp); if(pv){pv.focus(); pv.value='';}} };
+        span.appendChild(inp);
+      } else { span.className='ch shown'; span.textContent=c; }
+    } else if(c===' '){ span.className='ch space'; }
+    else { span.className='ch punct'; span.textContent=c; }
+    box.appendChild(span);
+  });
+  const first=box.querySelector('input'); if(first) first.focus();
+  updateScore();
+}
+function nextInput(el){ const ins=[...document.querySelectorAll('#quizBlanks input')]; const i=ins.indexOf(el); return ins[i+1]||null; }
+function prevInput(el){ const ins=[...document.querySelectorAll('#quizBlanks input')]; const i=ins.indexOf(el); return ins[i-1]||null; }
+function updateScore(){ document.getElementById('quizScore').textContent = '得分：'+qScore+' / '+qTotal+'　｜　第 '+(qi+1)+' 題 / 共 '+quizOrder.length+' 題'; }
+function checkQuiz(){
+  const ins=[...document.querySelectorAll('#quizBlanks input')];
+  let allOk=true;
+  ins.forEach(inp=>{
+    const ok = inp.value.trim().toLowerCase()===inp.dataset.ans;
+    inp.classList.toggle('ok',ok); inp.classList.toggle('bad',!ok);
+    if(!ok) allOk=false;
+  });
+  qTotal++;
+  const fb=document.getElementById('quizFeedback');
+  if(allOk){ qScore++; fb.textContent='🎉 答對了！'; fb.className='feedback good'; playSound('good'); }
+  else { fb.textContent='再試試看，紅色的格子有錯喔！'; fb.className='feedback bad'; playSound('bad'); }
+  updateScore();
+}
+function revealQuiz(){
+  const [w] = WORDS[quizOrder[qi]];
+  document.querySelectorAll('#quizBlanks input').forEach(inp=>{ inp.value=inp.dataset.ans; inp.classList.remove('bad'); inp.classList.add('ok'); });
+  const fb=document.getElementById('quizFeedback');
+  fb.textContent='答案：'+w; fb.className='feedback';
+  speak(w,'en-US');
+}
+function quizHint(){ speak(WORDS[quizOrder[qi]][0],'en-US'); }
+function nextQuiz(){
+  qi++;
+  if(qi>=quizOrder.length){ showResult(); return; }
+  buildQuiz();
+}
+function showResult(){
+  document.getElementById('quizMain').style.display='none';
+  document.getElementById('quizResult').style.display='block';
+  const pct = quizOrder.length ? Math.round(qScore/quizOrder.length*100) : 0;
+  let praise = pct>=90 ? '🌟 太厲害了！' : pct>=70 ? '👏 很棒！' : pct>=50 ? '💪 繼續加油！' : '📖 多多練習喔！';
+  document.getElementById('resultText').innerHTML = '測驗結束！<br>得分：'+qScore+' / '+quizOrder.length+'（'+pct+' 分）<br>'+praise;
+}
+
+function switchMode(m){
+  ['card','list','quiz'].forEach(k=>{
+    document.getElementById('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('active',m===k);
+    document.getElementById(k+'Panel').style.display = m===k?'block':'none';
+  });
+  document.getElementById('arrowL').style.display = m==='card'?'block':'none';
+  document.getElementById('arrowR').style.display = m==='card'?'block':'none';
+  if(m==='list') renderList();
+}
+renderCard();
+updateSetupInfo();
+document.getElementById('arrowL').style.display='block';
+document.getElementById('arrowR').style.display='block';
+</script>
+</body>
+</html>
